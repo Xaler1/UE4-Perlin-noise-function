@@ -27,14 +27,14 @@ class UPerlin_NoiseBPLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "1D Perlin Noise", Keywords = "1D Perlin_Noise perlin noise Perlin Noise"), Category = "Perlin_Noise")
-	static float OneD_Perlin_Noise(float X, float wavelength, float amplitude);
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "1D Perlin Noise", Keywords = "1D Perlin_Noise perlin noise Perlin Noise"), Category = "Perlin_Noise")
+	static float OneD_Perlin_Noise(const float X, const float wavelength, const float amplitude);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "2D Perlin Noise", Keywords = "2D Perlin_Noise perlin noise Perlin Noise"), Category = "Perlin_Noise")
-	static float TwoD_Perlin_Noise(float X, float Y, float wavelength, float amplitude);
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "2D Perlin Noise", Keywords = "2D Perlin_Noise perlin noise Perlin Noise"), Category = "Perlin_Noise")
+	static float TwoD_Perlin_Noise(const float X, const float Y, const float wavelength, const float amplitude);
 
-	UFUNCTION(BlueprintCallable, meta = (DisplayName = "3D Perlin Noise", Keywords = "3D Perlin_Noise perlin noise Perlin Noise"), Category = "Perlin_Noise")
-	static float ThreeD_Perlin_Noise(float X, float Y, float Z, float wavelength, float amplitude);
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "3D Perlin Noise", Keywords = "3D Perlin_Noise perlin noise Perlin Noise"), Category = "Perlin_Noise")
+	static float ThreeD_Perlin_Noise(const float X, const float Y, const float Z, const float wavelength, const float amplitude);
 
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Set Noise Seed", Keywords = "Set_Seed seed set seed"), Category = "Perlin_Noise")
 	static void SetSeed(int seed);
