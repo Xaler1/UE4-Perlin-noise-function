@@ -4,7 +4,6 @@
 #include "Perlin_Noise.h"
 #include "stdlib.h"
 #include "time.h"
-#include "stdio.h"
 
 int p[512];
 
@@ -31,7 +30,8 @@ float UPerlin_NoiseBPLibrary::OneD_Perlin_Noise(float X, float wavelength = 1, f
 	if (wavelength == 0) {
 		wavelength = 1;
 	}
-	int a = int(floor(X / wavelength)) & 0xff;
+	X /= wavelength;
+	int a = int(floor(X)) & 0xff;
 	X -= floor(X);
 	return Interpolate(Gradient(p[a], X), Gradient(p[a + 1], X - 1), Fade(X)) * amplitude;
 }
@@ -41,8 +41,10 @@ float UPerlin_NoiseBPLibrary::TwoD_Perlin_Noise(float X, float Y, float waveleng
 	if (wavelength == 0) {
 		wavelength = 1;
 	}
-	int a = int(floor(X / wavelength)) & 0xff;
-	int b = int(floor(Y / wavelength)) & 0xff;
+	X /= wavelength;
+	Y /= wavelength;
+	int a = int(floor(X)) & 0xff;
+	int b = int(floor(Y)) & 0xff;
 	X -= floor(X);
 	Y -= floor(Y);
 	int A = int((p[a] + b)) & 0xff;
@@ -56,9 +58,12 @@ float UPerlin_NoiseBPLibrary::ThreeD_Perlin_Noise(float X, float Y, float Z, flo
 	if (wavelength == 0) {
 		wavelength = 1;
 	}
-	int a = int(floor(X / wavelength)) & 0xff;
-	int b = int(floor(Y / wavelength)) & 0xff;
-	int c = int(floor(Z / wavelength)) & 0xff;
+	X /= wavelength;
+	Y /= wavelength;
+	Z /= wavelength;
+	int a = int(floor(X)) & 0xff;
+	int b = int(floor(Y)) & 0xff;
+	int c = int(floor(Z)) & 0xff;
 	X -= floor(X);
 	Y -= floor(Y);
 	Z -= floor(Z);
