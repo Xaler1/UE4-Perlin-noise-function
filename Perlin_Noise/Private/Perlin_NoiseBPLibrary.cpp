@@ -5,97 +5,112 @@
 #include "stdlib.h"
 #include "time.h"
 
-int p[512];
+float coefs[11];
 
 UPerlin_NoiseBPLibrary::UPerlin_NoiseBPLibrary(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
 	srand(time(NULL));
-	for (int i = 0; i < 512; i++) {
-		p[i] = rand() % 256 + 1;
+	for (int i = 0; i < 11; i++) {
+		coefs[i] = rand() * 1000;
 	}
 }
 
 float Interpolate(float a, float b, float x);
-float LinearInterpolate(float a, float b, float x);
 float Fade(float t);
-float Gradient(int hash, float X);
-float Gradient(int hash, float X, float Y);
-float Gradient(int hash, float X, float Y, float Z);
-float Random();
+float dotGradient(int X, float x, int Y = 0, float y = 0, int Z = 0, float z = 0, int W = 0, float w = 0);
+FVector4 Random(int X, int Y, int Z, int W);
 
 
-float UPerlin_NoiseBPLibrary::OneD_Perlin_Noise(float X, float wavelength = 1, float amplitude = 1)
+float UPerlin_NoiseBPLibrary::OneD_Perlin_Noise(float x, float wavelength = 1, float amplitude = 1)
 {
-	if (wavelength == 0) {
-		wavelength = 1;
-	}
-	X /= wavelength;
-	int a = int(floor(X)) & 0xff;
-	X -= floor(X);
-	return Interpolate(Gradient(p[a], X), Gradient(p[a + 1], X - 1), Fade(X)) * amplitude;
+	x /= wavelength;
+	int xL = floor(x);
+	int xU = xL + 1;
+
+	float dx = Fade(x - xL);
+	return Interpolate(dotGradient(xL, x), dotGradient(xU, x), dx) * amplitude;
 }
 
-float UPerlin_NoiseBPLibrary::TwoD_Perlin_Noise(float X, float Y, float wavelength = 1, float amplitude = 1)
+float UPerlin_NoiseBPLibrary::TwoD_Perlin_Noise(float x, float y, float wavelength = 1, float amplitude = 1)
 {
-	if (wavelength == 0) {
-		wavelength = 1;
-	}
-	X /= wavelength;
-	Y /= wavelength;
-	int a = int(floor(X)) & 0xff;
-	int b = int(floor(Y)) & 0xff;
-	X -= floor(X);
-	Y -= floor(Y);
-	int A = int((p[a] + b)) & 0xff;
-	int B = int((p[a + 1] + b)) & 0xff;
-	return Interpolate(Interpolate(Gradient(p[A], X, Y), Gradient(p[B], X - 1, Y), Fade(X)),
-					   Interpolate(Gradient(p[A+1], X, Y - 1), Gradient(p[B + 1], X - 1, Y - 1), Fade(X)), Fade(Y)) * amplitude;
+	x /= wavelength;
+	y /= wavelength;
+	int xL = floor(x);
+	int xU = xL + 1;
+	int yL = floor(y);
+	int yU = yL + 1;
+
+	float dx = Fade(x - xL);
+	float dy = Fade(y - yL);
+
+	return Interpolate(Interpolate(dotGradient(xL, x, yL, y), dotGradient(xU, x, yL, y), dx),
+		Interpolate(dotGradient(xL, x, yU, y), dotGradient(xU, x, yU, y), dx), dy) * amplitude;
 }
 
-float UPerlin_NoiseBPLibrary::ThreeD_Perlin_Noise(float X, float Y, float Z, float wavelength = 1, float amplitude = 1)
+float UPerlin_NoiseBPLibrary::ThreeD_Perlin_Noise(float x, float y, float z, float wavelength = 1, float amplitude = 1)
 {
-	if (wavelength == 0) {
-		wavelength = 1;
-	}
-	X /= wavelength;
-	Y /= wavelength;
-	Z /= wavelength;
-	int a = int(floor(X)) & 0xff;
-	int b = int(floor(Y)) & 0xff;
-	int c = int(floor(Z)) & 0xff;
-	X -= floor(X);
-	Y -= floor(Y);
-	Z -= floor(Z);
-	float u = Fade(X);
-	float v = Fade(Y);
-	float w = Fade(Z);
-	int A = int(p[a] + b) & 0xff;
-	int B = int(p[a + 1] + b) & 0xff;
-	int AA = int(p[A] + c) & 0xff;
-	int BA = int(p[B] + c) & 0xff;
-	int AB = int(p[A + 1] + c) & 0xff;
-	int BB = int(p[B + 1] + c) & 0xff;
-	return Interpolate(Interpolate(Interpolate(Gradient(p[AA], X, Y, Z), Gradient(p[BA], X - 1, Y, Z), u),
-								   Interpolate(Gradient(p[AB], X, Y - 1, Z), Gradient(p[BB], X - 1, Y - 1, Z), u), v), 
-					   Interpolate(Interpolate(Gradient(p[AA + 1], X, Y, Z - 1), Gradient(p[BA + 1], X - 1, Y, Z - 1), u),
-								   Interpolate(Gradient(p[AB + 1], X, Y - 1, Z - 1), Gradient(p[BB + 1], X - 1, Y - 1, Z - 1), u), v), w) * amplitude;
+	x /= wavelength;
+	y /= wavelength;
+	z /= wavelength;
+	int xL = floor(x);
+	int xU = xL + 1;
+	int yL = floor(y);
+	int yU = yL + 1;
+	int zL = floor(z);
+	int zU = zL + 1;
+
+	float dx = Fade(x - xL);
+	float dy = Fade(y - yL);
+	float dz = Fade(z - zL);
+
+	return Interpolate(Interpolate(Interpolate(dotGradient(xL, x, yL, y, zL, z), dotGradient(xU, x, yL, y, zL, z), dx),
+								   Interpolate(dotGradient(xL, x, yU, y, zL, z), dotGradient(xU, x, yU, y, zL, z), dx), dy),
+					   Interpolate(Interpolate(dotGradient(xL, x, yL, y, zU, z), dotGradient(xU, x, yL, y, zU, z), dx),
+								   Interpolate(dotGradient(xL, x, yU, y, zU, z), dotGradient(xU, x, yU, y, zU, z), dx), dy), dz) * amplitude;
+}
+
+float UPerlin_NoiseBPLibrary::FourD_Perlin_Noise(float x, float y, float z, float w, float wavelength = 1, float amplitude = 1) {
+	x /= wavelength;
+	y /= wavelength;
+	z /= wavelength;
+	w /= wavelength;
+	int xL = floor(x);
+	int xU = xL + 1;
+	int yL = floor(y);
+	int yU = yL + 1;
+	int zL = floor(z);
+	int zU = zL + 1;
+	int wL = floor(w);
+	int wU = wL + 1;
+
+	float dx = Fade(x - xL);
+	float dy = Fade(y - yL);
+	float dz = Fade(z - zL);
+	float dw = Fade(w - wL);
+
+	return Interpolate(Interpolate(Interpolate(Interpolate(dotGradient(xL, x, yL, y, zL, z, wL, w), dotGradient(xU, x, yL, y, zL, z, wL, w), dx),
+		Interpolate(dotGradient(xL, x, yU, y, zL, z, wL, w), dotGradient(xU, x, yU, y, zL, z, wL, w), dx), dy),
+		Interpolate(Interpolate(dotGradient(xL, x, yL, y, zU, z, wL, w), dotGradient(xU, x, yL, y, zU, z, wL, w), dx),
+			Interpolate(dotGradient(xL, x, yU, y, zU, z, wL, w), dotGradient(xU, x, yU, y, zU, z, wL, w), dx), dy), dz),
+		Interpolate(Interpolate(Interpolate(dotGradient(xL, x, yL, y, zL, z, wU, w), dotGradient(xU, x, yL, y, zL, z, wU, w), dx),
+			Interpolate(dotGradient(xL, x, yU, y, zL, z, wU, w), dotGradient(xU, x, yU, y, zL, z, wU, w), dx), dy),
+			Interpolate(Interpolate(dotGradient(xL, x, yL, y, zU, z, wU, w), dotGradient(xU, x, yL, y, zU, z, wU, w), dx),
+				Interpolate(dotGradient(xL, x, yU, y, zU, z, wU, w), dotGradient(xU, x, yU, y, zU, z, wU, w), dx), dy), dz), dw) * amplitude;
 }
 
 void UPerlin_NoiseBPLibrary::SetSeed(int seed) {
 	srand(seed);
-	for (int i = 0; i < 512; i++) {
-		p[i] = rand() % 256 + 1;
+	for (int i = 0; i < 11; i++) {
+		coefs[i] = rand() * 1000;
 	}
 }
 
-float Random() {
-	long M = 429496796;
-	long A = 1664525;
-	int C = 1;
-	long Z = floor(rand() * M);
-	Z = (A * Z + C) % M;
-	return Z/M;
+FVector4 Random(int X, int Y, int Z, int W) {
+	float seed = coefs[0] * sin(coefs[1] * X + coefs[2] * Y + coefs[3] * Z + coefs[4] * W + coefs[5]) * tan(coefs[6] * X + coefs[7] * Y + coefs[8] * Z + coefs[9] * W + coefs[10]);
+	srand(seed);
+	FVector4 random_vector = FVector4(rand(), rand(), rand(), rand());
+	return random_vector / random_vector.Size();
 }
 
 float Interpolate(float a, float b, float x) {
@@ -104,25 +119,15 @@ float Interpolate(float a, float b, float x) {
 	return a * (1 - f) + b * f;
 }
 
-float LinearInterpolate(float a, float b, float x) {
-	return a + x * (b - a);
-}
-
 float Fade(float t) {
 	return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
-float Gradient(int hash, float X) {
-	return (hash & 1) == 0 ? X : -X;
-}
-
-float Gradient(int hash, float X, float Y) {
-	return ((hash & 1) == 0 ? X : -X) + ((hash & 2) == 0 ? Y : -Y);
-}
-
-float Gradient(int hash, float X, float Y, float Z) {
-	int h = hash & 15;
-	float u = h < 8 ? X : Y;
-	float v = h < 4 ? Y : (h == 12 || h == 14 ? X : Z);
-	return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+float dotGradient(int X, float x, int Y, float y, int Z, float z, int W, float w) {
+	FVector4 random_vector = Random(X, Y, Z, W);
+	float dx = x - X;
+	float dy = y - Y;
+	float dz = z - Z;
+	float dw = w - W;
+	return dx * random_vector.X + dy * random_vector.Y + dz * random_vector.Z + dw * random_vector.W;
 }
