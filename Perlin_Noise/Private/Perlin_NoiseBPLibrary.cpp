@@ -4,6 +4,7 @@
 #include "Perlin_Noise.h"
 #include "stdlib.h"
 #include "time.h"
+#include "math.h"
 
 float coefs[11];
 
@@ -22,9 +23,9 @@ float dotGradient(int X, float x, int Y = 0, float y = 0, int Z = 0, float z = 0
 FVector4 Random(int X, int Y, int Z, int W);
 
 
-float UPerlin_NoiseBPLibrary::OneD_Perlin_Noise(float x, float wavelength = 1, float amplitude = 1)
-{
-	x /= wavelength;
+float UPerlin_NoiseBPLibrary::OneD_Perlin_Noise(float x, float scale, float amplitude) {
+	scale = scale <= 0 ? 1 : scale;
+	x /= scale;
 	int xL = floor(x);
 	int xU = xL + 1;
 
@@ -32,10 +33,10 @@ float UPerlin_NoiseBPLibrary::OneD_Perlin_Noise(float x, float wavelength = 1, f
 	return Interpolate(dotGradient(xL, x), dotGradient(xU, x), dx) * amplitude;
 }
 
-float UPerlin_NoiseBPLibrary::TwoD_Perlin_Noise(float x, float y, float wavelength = 1, float amplitude = 1)
-{
-	x /= wavelength;
-	y /= wavelength;
+float UPerlin_NoiseBPLibrary::TwoD_Perlin_Noise(float x, float y, float scale, float amplitude) {
+	scale = scale <= 0 ? 1 : scale;
+	x /= scale;
+	y /= scale;
 	int xL = floor(x);
 	int xU = xL + 1;
 	int yL = floor(y);
@@ -48,11 +49,11 @@ float UPerlin_NoiseBPLibrary::TwoD_Perlin_Noise(float x, float y, float waveleng
 		Interpolate(dotGradient(xL, x, yU, y), dotGradient(xU, x, yU, y), dx), dy) * amplitude;
 }
 
-float UPerlin_NoiseBPLibrary::ThreeD_Perlin_Noise(float x, float y, float z, float wavelength = 1, float amplitude = 1)
-{
-	x /= wavelength;
-	y /= wavelength;
-	z /= wavelength;
+float UPerlin_NoiseBPLibrary::ThreeD_Perlin_Noise(float x, float y, float z, float scale, float amplitude) {
+	scale = scale <= 0 ? 1 : scale;
+	x /= scale;
+	y /= scale;
+	z /= scale;
 	int xL = floor(x);
 	int xU = xL + 1;
 	int yL = floor(y);
@@ -70,11 +71,12 @@ float UPerlin_NoiseBPLibrary::ThreeD_Perlin_Noise(float x, float y, float z, flo
 								   Interpolate(dotGradient(xL, x, yU, y, zU, z), dotGradient(xU, x, yU, y, zU, z), dx), dy), dz) * amplitude;
 }
 
-float UPerlin_NoiseBPLibrary::FourD_Perlin_Noise(float x, float y, float z, float w, float wavelength = 1, float amplitude = 1) {
-	x /= wavelength;
-	y /= wavelength;
-	z /= wavelength;
-	w /= wavelength;
+float UPerlin_NoiseBPLibrary::FourD_Perlin_Noise(float x, float y, float z, float w, float scale, float amplitude) {
+	scale = scale <= 0 ? 1 : scale;
+	x /= scale;
+	y /= scale;
+	z /= scale;
+	w /= scale;
 	int xL = floor(x);
 	int xU = xL + 1;
 	int yL = floor(y);
@@ -99,6 +101,46 @@ float UPerlin_NoiseBPLibrary::FourD_Perlin_Noise(float x, float y, float z, floa
 				Interpolate(dotGradient(xL, x, yU, y, zU, z, wU, w), dotGradient(xU, x, yU, y, zU, z, wU, w), dx), dy), dz), dw) * amplitude;
 }
 
+float UPerlin_NoiseBPLibrary::OneD_Perlin_Fractal(float x, const int levels, float scale, float amplitude, const float ScaleFade, const float AmpFade) {
+	float result = 0;
+	for (int i = 0; i < levels; i++) {
+		result += OneD_Perlin_Noise(x, scale, amplitude);
+		scale /= ScaleFade;
+		amplitude /= AmpFade;
+	}
+	return result;
+}
+
+float UPerlin_NoiseBPLibrary::TwoD_Perlin_Fractal(const float x, const float y, const int levels, float scale, float amplitude, const float ScaleFade, const float AmpFade) {
+	float result = 0;
+	for (int i = 0; i < levels; i++) {
+		result += TwoD_Perlin_Noise(x, y, scale, amplitude);
+		scale /= ScaleFade;
+		amplitude /= AmpFade;
+	}
+	return result;
+}
+
+float UPerlin_NoiseBPLibrary::ThreeD_Perlin_Fractal(const float x, const float y, const float z, const int levels, float scale, float amplitude, const float ScaleFade, const float AmpFade) {
+	float result = 0;
+	for (int i = 0; i < levels; i++) {
+		result += ThreeD_Perlin_Noise(x, y, z, scale, amplitude);
+		scale /= ScaleFade;
+		amplitude /= AmpFade;
+	}
+	return result;
+}
+
+float UPerlin_NoiseBPLibrary::FourD_Perlin_Fractal(const float x, const float y, const float z, const float w, const int levels, float scale, float amplitude, const float ScaleFade, const float AmpFade) {
+	float result = 0;
+	for (int i = 0; i < levels; i++) {
+		result += FourD_Perlin_Noise(x, y, z, w, scale, amplitude);
+		scale /= ScaleFade;
+		amplitude /= AmpFade;
+	}
+	return result;
+}
+
 void UPerlin_NoiseBPLibrary::SetSeed(int seed) {
 	srand(seed);
 	for (int i = 0; i < 11; i++) {
@@ -107,9 +149,13 @@ void UPerlin_NoiseBPLibrary::SetSeed(int seed) {
 }
 
 FVector4 Random(int X, int Y, int Z, int W) {
-	float seed = coefs[0] * sin(coefs[1] * X + coefs[2] * Y + coefs[3] * Z + coefs[4] * W + coefs[5]) * tan(coefs[6] * X + coefs[7] * Y + coefs[8] * Z + coefs[9] * W + coefs[10]);
+	float seed = coefs[0] * sin(coefs[1] * X + coefs[2] * Y + coefs[3] * Z + coefs[4] * W + coefs[5]) * cos(coefs[6] * X + coefs[7] * Y + coefs[8] * Z + coefs[9] * W + coefs[10]);
 	srand(seed);
-	FVector4 random_vector = FVector4(rand(), rand(), rand(), rand());
+	float x = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / 2.0)) - 1.0;
+	float y = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / 2.0)) - 1.0;
+	float z = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / 2.0)) - 1.0;
+	float w = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / 2.0)) - 1.0;
+	FVector4 random_vector = FVector4(x, y, z, w);
 	return random_vector / random_vector.Size();
 }
 
